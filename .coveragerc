@@ -1,0 +1,6 @@
+[run]
+branch = True
+omit = ds-sql-formatter/tests/*
+
+[report]
+fail_under=5
