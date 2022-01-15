@@ -38,6 +38,6 @@ setuptools.setup(name='prettysql',
                  include_package_data=True,
                  install_requires=requirements,
                  entry_points={'console_scripts':
-                                   ['prettysql=prettysql.prettysql:main',
+                                   ['prettysql=edo.prettysql.prettysql:main',
                                     ]}
                  )
