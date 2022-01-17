@@ -1,4 +1,6 @@
 WITH vars AS (
+    (
+    (
 SELECT
     DATE('{start_date}') AS start_date,
     DATE('{end_date}') AS end_date,
@@ -14,73 +16,75 @@ SELECT
     session_date,
     eventLabel,
     CASE
-        WHEN ( eventLabel LIKE ('%:log_%') OR eventLabel LIKE ('%:prime-log_%') OR eventLabel LIKE ('%:no-prime-log_&') OR eventLabel LIKE ('%:prime-std-log_%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%:log_%') OR eventLabel LIKE ((('%:prime-log_%') OR eventLabel LIKE ((('%:no-prime-log_&') OR eventLabel LIKE ((('%:prime-std-log_%') ) THEN 1
         ELSE 0
     END AS is_logged,
     CASE
-        WHEN ( eventLabel LIKE ('%prime_widget_sce:%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%prime_widget_sce:%') ) THEN 1
         ELSE 0
     END AS is_see_widget,
     CASE
-        WHEN ( eventLabel LIKE ('%know_more_banner_sce:%') OR eventLabel LIKE ('%know_more_selection_sce:%') OR eventLabel LIKE ('%know_more_widget_sce:%') OR REGEXP_CONTAINS(eventLabel, r'^know_more_list_[[:alnum:]]_sce:') OR eventLabel LIKE ('%know_more_selection_sce:%') OR eventLabel LIKE ('%know_more_selection_continue%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%know_more_banner_sce:%') OR eventLabel LIKE ((('%know_more_selection_sce:%') OR eventLabel LIKE ((('%know_more_widget_sce:%') OR REGEXP_CONTAINS(eventLabel, r'^know_more_list_[[:alnum:]]_sce:') OR eventLabel LIKE ((('%know_more_selection_sce:%') OR eventLabel LIKE ((('%know_more_selection_continue%') ) THEN 1
         ELSE 0
     END AS is_know_more,
     CASE
-        WHEN ( eventLabel LIKE ('%know_more_banner_close_sce:%') OR eventLabel LIKE ('%know_more_selection_close_sce:%') OR eventLabel LIKE ('%know_more_widget_close_sce:%') OR eventLabel LIKE ('%know_more_list_close_sce:%') OR eventLabel LIKE ('%know_more_selection_close%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%know_more_banner_close_sce:%') OR eventLabel LIKE ((('%know_more_selection_close_sce:%') OR eventLabel LIKE ((('%know_more_widget_close_sce:%') OR eventLabel LIKE ((('%know_more_list_close_sce:%') OR eventLabel LIKE ((('%know_more_selection_close%') ) THEN 1
         ELSE 0
     END AS is_know_more_close,
     CASE
-        WHEN ( eventLabel LIKE ('%_benefit%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%_benefit%') ) THEN 1
         ELSE 0
     END AS is_benefit,
     CASE
-        WHEN ( eventLabel LIKE ('%prime_terms_conditions_sce:%') OR eventLabel LIKE ('%prime_terms_conditions_pag:%') OR eventLabel LIKE ('%prime_terms_sce:%') OR eventLabel LIKE ('%unlocked_terms_and_conditions_sce:%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%prime_terms_conditions_sce:%') OR eventLabel LIKE ((('%prime_terms_conditions_pag:%') OR eventLabel LIKE ((('%prime_terms_sce:%') OR eventLabel LIKE ((('%unlocked_terms_and_conditions_sce:%') ) THEN 1
         ELSE 0
     END AS is_tc,
     CASE
-        WHEN ( eventLabel LIKE ('%prime_fare_click_sce:%') OR eventLabel LIKE ('%prime_click_sce:%') OR eventLabel LIKE ('%prime-log_click_sce:%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%prime_fare_click_sce:%') OR eventLabel LIKE ((('%prime_click_sce:%') OR eventLabel LIKE ((('%prime-log_click_sce:%') ) THEN 1
         ELSE 0
     END AS is_prime_fare,
     CASE
-        WHEN ( eventLabel LIKE ('%standard_fare_click_sce:%') OR eventLabel LIKE ('%full_fare_click_sce:%') OR eventLabel LIKE ('%no-prime_click_sce:%') OR eventLabel LIKE ('%no-prime-log_click_sce:%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%standard_fare_click_sce:%') OR eventLabel LIKE ((('%full_fare_click_sce:%') OR eventLabel LIKE ((('%no-prime_click_sce:%') OR eventLabel LIKE ((('%no-prime-log_click_sce:%') ) THEN 1
         ELSE 0
     END AS is_standard_fare,
     CASE
-        WHEN ( eventLabel LIKE ('%existing_account_log_in_sce:prime%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%existing_account_log_in_sce:prime%') ) THEN 1
         ELSE 0
     END AS is_account_login,
     CASE
-        WHEN ( eventLabel LIKE ('%prime_go_login_sce:%')
-    OR eventLabel LIKE ('%prime_login_pag:%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%prime_go_login_sce:%')
+    OR eventLabel LIKE ((('%prime_login_pag:%') ) THEN 1
         ELSE 0
     END AS is_prime_login,
     CASE
-        WHEN ( eventLabel LIKE ('%prime_search_pag:%') ) THEN 1
+        WHEN ((( eventLabel LIKE ((('%prime_search_pag:%') ) THEN 1
         ELSE 0
     END AS is_prime_search,
 FROM `{project}.{dataset}.ftp_historical_sessions_ga_aux`
-WHERE eventLabel LIKE ('%prime_widget_sce:%')
-    OR eventLabel LIKE ('%_click_sce:%')
-    OR eventLabel LIKE ('%know_more_selection_sce:%')
+WHERE eventLabel LIKE ((('%prime_widget_sce:%')
+    OR eventLabel LIKE ((('%_click_sce:%')
+    OR eventLabel LIKE ((('%know_more_selection_sce:%')
     OR REGEXP_CONTAINS(eventLabel, r'^know_more_list_[[:alnum:]]_sce:')
-    OR eventLabel LIKE ('%know_more_banner_sce:%')
-    OR eventLabel LIKE ('%know_more_widget_sce:%')
-    OR eventLabel LIKE ('%kknow_more_selection_continue%')
-    OR eventLabel LIKE ('%know_more_banner_close_sce:%')
-    OR eventLabel LIKE ('%know_more_list_close_sce:%')
-    OR eventLabel LIKE ('%know_more_selection_close_sce:%')
-    OR eventLabel LIKE ('%know_more_widget_close_sce:%')
-    OR eventLabel LIKE ('%know_more_selection_close%')
-    OR eventLabel LIKE ('%prime_terms_conditions_sce:%')
-    OR eventLabel LIKE ('%prime_terms_conditions_pag:%')
-    OR eventLabel LIKE ('%prime_terms_sce:%')
-    OR eventLabel LIKE ('%unlocked_terms_and_conditions_sce:%')
-    OR eventLabel LIKE ('%_benefit%')
-    OR eventLabel LIKE ('%prime_search_pag:%')
-    OR eventLabel LIKE ('%prime_login_pag:%')
-    OR eventLabel LIKE ('%prime_go_login_sce:%')
-    OR eventLabel LIKE ('%existing_account_log_in_sce:prime%') ),
+    OR eventLabel LIKE ((('%know_more_banner_sce:%')
+    OR eventLabel LIKE ((('%know_more_widget_sce:%')
+    OR eventLabel LIKE ((('%kknow_more_selection_continue%')
+    OR eventLabel LIKE ((('%know_more_banner_close_sce:%')
+    OR eventLabel LIKE ((('%know_more_list_close_sce:%')
+    OR eventLabel LIKE ((('%know_more_selection_close_sce:%')
+    OR eventLabel LIKE ((('%know_more_widget_close_sce:%')
+    OR eventLabel LIKE ((('%know_more_selection_close%')
+    OR eventLabel LIKE ((('%prime_terms_conditions_sce:%')
+    OR eventLabel LIKE ((('%prime_terms_conditions_pag:%')
+    OR eventLabel LIKE ((('%prime_terms_sce:%')
+    OR eventLabel LIKE ((('%unlocked_terms_and_conditions_sce:%')
+    OR eventLabel LIKE ((('%_benefit%')
+    OR eventLabel LIKE ((('%prime_search_pag:%')
+    OR eventLabel LIKE ((('%prime_login_pag:%')
+    OR eventLabel LIKE ((('%prime_go_login_sce:%')
+    OR eventLabel LIKE ((('%existing_account_log_in_sce:prime%') ),
 sessions_ftp AS (
+    (
+    (
 SELECT
     U.SUBSCR_BOOKING_ID,
     U.SUBSCR_DATE,
@@ -118,4 +122,5 @@ SELECT
     SUM(is_prime_search) AS is_prime_search,
 FROM sessions_ftp
 GROUP BY
-    1, 2 
+    1,
+    2 

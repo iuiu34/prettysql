@@ -9,12 +9,12 @@ START_WORDS = ['select', 'from', 'join', 'left join', 'right join', 'group', 'wi
 SPECIAL_WORDS = ['select', 'from', 'group', 'with', 'as', 'on', 'where', 'and', 'between', 'having',
                  'order', 'by', 'then', 'using', 'except', 'numeric']
 
-NEWLINE_WORDS = ['select distinct', 'select', 'group by']
+NEWLINE_WORDS = ['select distinct', 'select']
 TWOTABS_WORDS = ['else', 'when', 'end']
-
+NO_NEWLINE_CHARACTERS = [')', '(', '[', ']', "'", 'GROUP BY']
 WORD_AS_FUNCS = ['using', 'except']
 
-SPECIAL_FUNCS = ['date', 'cast', 'nullif']
+# SPECIAL_FUNCS = ['date', 'cast', 'nullif']
 NEWLINE_CHARACTERS = [' AS (', ' EXCEPT (']
 TAB = '    '
 
@@ -41,13 +41,14 @@ def prettysql_file(filename, filename_out=None):
         sql = f.read()
     special_words = [v.upper() for v in SPECIAL_WORDS]
     start_words = [v.upper() for v in START_WORDS]
-    special_funcs = [v.upper() for v in SPECIAL_FUNCS]
+    # special_funcs = [v.upper() for v in SPECIAL_FUNCS]
     newline_words = [v.upper() for v in NEWLINE_WORDS]
     newline_characters = [v.upper() for v in NEWLINE_CHARACTERS]
     twotabs_words = [v.upper() for v in TWOTABS_WORDS]
     word_as_funcs = [v.upper() for v in WORD_AS_FUNCS]
 
     sql = sql.replace('--', '\n-- ')
+    # sql = sql.replace('(', ' (')
     while '  ' in sql:
         sql = sql.replace('  ', ' ')
     # sql = sql.replace('\n', ' \n ')
@@ -74,10 +75,14 @@ def prettysql_file(filename, filename_out=None):
                 if sql_line.endswith(f" {start_word} "):
                     sql_line += '__delete__'
 
-            for special_func in special_funcs:
-                pattern = re.compile(f" {special_func}\(", re.IGNORECASE)
-                sql_line = pattern.sub(f" {special_func}(", sql_line)
+            def upper_re(match):
+                return match.group().upper()
 
+            sql_line = re.sub(" [a-zA-Z]+ \(", upper_re, sql_line)
+            sql_line = re.sub(" [a-zA-Z]+\(", upper_re, sql_line)
+
+            pattern = re.compile(" \abc \(", re.IGNORECASE)
+            sql_line = pattern.sub(" \abc.upper() \(", sql_line)
             for newline_word in newline_words:
                 sql_line = sql_line.replace(f" {newline_word} ", f" {newline_word}\n")
 
@@ -86,6 +91,9 @@ def prettysql_file(filename, filename_out=None):
 
             for twotabs_word in twotabs_words:
                 sql_line = sql_line.replace(f" {twotabs_word} ", f"\n {twotabs_word} ")
+
+            if not any([v in sql_line for v in NO_NEWLINE_CHARACTERS]):
+                sql_line = sql_line.replace(",", ",\n")
 
             sql_line = sql_line.replace('* EXCEPT', '*\nEXCEPT')
             sql_line = sql_line.replace(' )', ')')
@@ -96,11 +104,12 @@ def prettysql_file(filename, filename_out=None):
             sql_line = sql_line.replace(',', ', ')
             sql_lines_tmp += [sql_line]
     sql = '\n'.join(sql_lines_tmp)
-    sql = sql.replace('__delete__\n',' ')
+    sql = sql.replace('__delete__\n', ' ')
     while '  ' in sql:
         sql = sql.replace('  ', ' ')
 
     # ToDo: split on ',' only on select - from
+    # indent lines
     sql_lines = sql.split('\n')
     sql_lines_tmp = []
     for index, sql_line in enumerate(sql_lines):
@@ -117,7 +126,19 @@ def prettysql_file(filename, filename_out=None):
         if sql_line.split() != []:
             sql_lines_tmp += [sql_line]
     sql_lines = sql_lines_tmp
-    sql = '\n'.join(sql_lines)
+    sql_lines_tmp = []
+    for index, sql_line in enumerate(sql_lines):
+        if index < len(sql_lines) - 1 and sql_line.startswith('--'):
+            for i in range(4, 0, -1):
+                if sql_lines[index + 1].startswith(i * TAB):
+                    sql_line = i * TAB + sql_line
+                    break
+        else:
+            pass
+        sql_lines_tmp += [sql_line]
+    sql = '\n'.join(sql_lines_tmp)
+
+    # indent comments
 
     sql = sql.replace(f'{TAB}END ', 'END ')
     while ' \n' in sql:

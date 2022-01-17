@@ -1,121 +1,152 @@
-WITH vars AS (
+CREATE TEMP FUNCTION BINULL(x float64, y float64) AS (
+    IFNULL(NULLIF(x, -2), y)
+    );
+WITH constant AS (
 SELECT
-    DATE('{start_date}') AS start_date,
-    DATE('{end_date}') AS end_date,
-    26 AS month_in_x ),
-sessions AS (
+    -- comment
+    DATE('2018-01-01') start_date,
+    CURRENT_DATE() end_date,
+    -- current_date() end_prime_ftp_date,
+    ['Direct', 'Metasearch', 'CRM', 'Partners', 'Affiliate Networks', 'Paid Search non branded',
+    'SEO', 'Paid Search branded', 'Others'] channel,
+    ['Metasearch', 'Paid Search non branded'] channel_paid,
+    ['App', 'Direct', 'CRM', 'SEO',
+    'Paid Search branded'] channel_cheap,
+    DATE('2019-01-01') prime_data_date,
+    24 AS months_new,
+    ),
+blacklist AS (
 SELECT
-    market,
-    website,
-    type,
-    fullVisitorId,
-    ga_visit_id,
-    session_id,
-    session_date,
-    eventLabel,
-    CASE
-        WHEN ( eventLabel LIKE ('%:log_%') OR eventLabel LIKE ('%:prime-log_%') OR eventLabel LIKE ('%:no-prime-log_&') OR eventLabel LIKE ('%:prime-std-log_%') ) THEN 1
-        ELSE 0
-    END AS is_logged,
-    CASE
-        WHEN ( eventLabel LIKE ('%prime_widget_sce:%') ) THEN 1
-        ELSE 0
-    END AS is_see_widget,
-    CASE
-        WHEN ( eventLabel LIKE ('%know_more_banner_sce:%') OR eventLabel LIKE ('%know_more_selection_sce:%') OR eventLabel LIKE ('%know_more_widget_sce:%') OR REGEXP_CONTAINS(eventLabel, r'^know_more_list_[[:alnum:]]_sce:') OR eventLabel LIKE ('%know_more_selection_sce:%') OR eventLabel LIKE ('%know_more_selection_continue%') ) THEN 1
-        ELSE 0
-    END AS is_know_more,
-    CASE
-        WHEN ( eventLabel LIKE ('%know_more_banner_close_sce:%') OR eventLabel LIKE ('%know_more_selection_close_sce:%') OR eventLabel LIKE ('%know_more_widget_close_sce:%') OR eventLabel LIKE ('%know_more_list_close_sce:%') OR eventLabel LIKE ('%know_more_selection_close%') ) THEN 1
-        ELSE 0
-    END AS is_know_more_close,
-    CASE
-        WHEN ( eventLabel LIKE ('%_benefit%') ) THEN 1
-        ELSE 0
-    END AS is_benefit,
-    CASE
-        WHEN ( eventLabel LIKE ('%prime_terms_conditions_sce:%') OR eventLabel LIKE ('%prime_terms_conditions_pag:%') OR eventLabel LIKE ('%prime_terms_sce:%') OR eventLabel LIKE ('%unlocked_terms_and_conditions_sce:%') ) THEN 1
-        ELSE 0
-    END AS is_tc,
-    CASE
-        WHEN ( eventLabel LIKE ('%prime_fare_click_sce:%') OR eventLabel LIKE ('%prime_click_sce:%') OR eventLabel LIKE ('%prime-log_click_sce:%') ) THEN 1
-        ELSE 0
-    END AS is_prime_fare,
-    CASE
-        WHEN ( eventLabel LIKE ('%standard_fare_click_sce:%') OR eventLabel LIKE ('%full_fare_click_sce:%') OR eventLabel LIKE ('%no-prime_click_sce:%') OR eventLabel LIKE ('%no-prime-log_click_sce:%') ) THEN 1
-        ELSE 0
-    END AS is_standard_fare,
-    CASE
-        WHEN ( eventLabel LIKE ('%existing_account_log_in_sce:prime%') ) THEN 1
-        ELSE 0
-    END AS is_account_login,
-    CASE
-        WHEN ( eventLabel LIKE ('%prime_go_login_sce:%')
-    OR eventLabel LIKE ('%prime_login_pag:%') ) THEN 1
-        ELSE 0
-    END AS is_prime_login,
-    CASE
-        WHEN ( eventLabel LIKE ('%prime_search_pag:%') ) THEN 1
-        ELSE 0
-    END AS is_prime_search,
-FROM `{project}.{dataset}.ftp_historical_sessions_ga_aux`
-WHERE eventLabel LIKE ('%prime_widget_sce:%')
-    OR eventLabel LIKE ('%_click_sce:%')
-    OR eventLabel LIKE ('%know_more_selection_sce:%')
-    OR REGEXP_CONTAINS(eventLabel, r'^know_more_list_[[:alnum:]]_sce:')
-    OR eventLabel LIKE ('%know_more_banner_sce:%')
-    OR eventLabel LIKE ('%know_more_widget_sce:%')
-    OR eventLabel LIKE ('%kknow_more_selection_continue%')
-    OR eventLabel LIKE ('%know_more_banner_close_sce:%')
-    OR eventLabel LIKE ('%know_more_list_close_sce:%')
-    OR eventLabel LIKE ('%know_more_selection_close_sce:%')
-    OR eventLabel LIKE ('%know_more_widget_close_sce:%')
-    OR eventLabel LIKE ('%know_more_selection_close%')
-    OR eventLabel LIKE ('%prime_terms_conditions_sce:%')
-    OR eventLabel LIKE ('%prime_terms_conditions_pag:%')
-    OR eventLabel LIKE ('%prime_terms_sce:%')
-    OR eventLabel LIKE ('%unlocked_terms_and_conditions_sce:%')
-    OR eventLabel LIKE ('%_benefit%')
-    OR eventLabel LIKE ('%prime_search_pag:%')
-    OR eventLabel LIKE ('%prime_login_pag:%')
-    OR eventLabel LIKE ('%prime_go_login_sce:%')
-    OR eventLabel LIKE ('%existing_account_log_in_sce:prime%') ),
-sessions_ftp AS (
-SELECT
-    U.SUBSCR_BOOKING_ID,
-    U.SUBSCR_DATE,
-    GA.*
-FROM `{project}.{dataset}.ftp_users` U,
-    vars v
-LEFT JOIN `datascience-210113.ds_user_general.user_info` UI
-    USING
-    (email_sha1),
-    UNNEST( UI.OTHER_IDS.FULL_VISITOR_ID) fullVisitorId
-JOIN sessions GA
-    USING
-    (fullVisitorId)
-WHERE DATE(UI.PROCESSING_DATE) BETWEEN DATE_SUB(DATE(U.SUBSCR_DATE), INTERVAL v.month_in_x MONTH)
-    AND DATE(U.SUBSCR_DATE)
-    AND DATE(UI.PROCESSING_DATE) BETWEEN DATE_SUB(DATE(v.start_date), INTERVAL v.month_in_x MONTH)
-    AND v.end_date
-    AND DATE(GA.session_date) BETWEEN DATE_SUB(DATE(U.SUBSCR_DATE), INTERVAL v.month_in_x MONTH)
-    AND DATE(U.SUBSCR_DATE)
-    AND DATE(GA.session_date) BETWEEN DATE_SUB(v.start_date, INTERVAL v.month_in_x MONTH)
-    AND v.end_date
-    AND ARRAY_LENGTH(OTHER_IDS.FULL_VISITOR_ID) > 0 )
-SELECT
-    SUBSCR_BOOKING_ID,
-    SUBSCR_DATE,
-    SUM(is_logged) / COUNT(DISTINCT ga_visit_id) AS ratio_log,
-    SUM(is_see_widget) AS is_see_widget,
-    SUM(is_know_more) AS is_know_more,
-    SUM(is_benefit) AS is_benefit,
-    SUM(is_tc) AS is_tc,
-    SUM(is_prime_fare) AS is_prime_fare,
-    SUM(is_standard_fare) AS is_standard_fare,
-    SUM(is_account_login) AS is_account_login,
-    SUM(is_prime_login) AS is_prime_login,
-    SUM(is_prime_search) AS is_prime_search,
-FROM sessions_ftp
+    email_buyer, COUNT(*) n
+FROM `bi-pro-225314.bi_ora_ext.v_r_trd_ud_order`,
+    constant c
+WHERE DESC_PRODUCT IN ( 'DP', 'Flight' )
+    AND issued = 1
+    AND NULLIF(EMAIL_BUYER, '-2') IS NOT NULL
+    AND DATE(DATE_REQUEST) BETWEEN c.start_date AND c.end_date
 GROUP BY
-    1, 2
+    1
+HAVING n > 200
+    ),
+ed_booking_customer_hist AS (
+-- hist issued with product in (DP,Flight)
+-- bi data only has data > 2017-01-01
+SELECT
+    DISTINCT
+    u.email_sha1,
+    u.timestamp,
+    u.booking_id,
+    CONCAT(u.email_sha1, u.timestamp, u.booking_id)
+FROM `datascience-210113.oracle_tables.ED_BOOKING_CUSTOMER` u,
+    constant c
+JOIN `datascience-210113.oracle_tables.ED_BOOKING` cp
+    ON u.booking_id = cp.id
+JOIN `datascience-210113.oracle_tables.FI_BOOKING_ITEM` i
+    ON i.booking_id = u.booking_id
+WHERE cp.STATUS = 'CONTRACT'
+    AND DATE(u.timestamp) BETWEEN DATE_SUB(c.start_date, INTERVAL c.months_new month)
+    AND c.end_date
+    AND DATE(cp.timestamp) BETWEEN DATE_SUB(c.start_date, INTERVAL c.months_new month)
+    AND c.end_date
+    AND DATE(i.timestamp) BETWEEN DATE_SUB(c.start_date, INTERVAL c.months_new month)
+    AND c.end_date
+    ),
+new_user AS (
+SELECT
+    CAST(u1.BOOKING_ID AS string) bookingid,
+    0 new_user,
+    COUNT(distinct u0.booking_id) num_bookings
+FROM ed_booking_customer_hist u1,
+    constant c
+JOIN ed_booking_customer_hist u0
+    ON u1.EMAIL_SHA1 = u0.EMAIL_SHA1
+WHERE DATE(u1.TIMESTAMP) >= c.start_date
+    AND DATE(u0.TIMESTAMP) >= DATE_SUB(DATE(u1.TIMESTAMP), INTERVAL c.months_new month)
+    AND u0.TIMESTAMP < u1.TIMESTAMP
+GROUP BY 1, 2, 3
+    ),
+bi AS (
+SELECT
+    bi.*
+    EXCEPT (
+    REVENUEMARGIN,
+    NETREVENUEMARGIN,
+    MARGINALPROFIT,
+    is_prime_free_trial,
+    is_prime,
+    is_first_prime),
+    BINULL(is_prime_free_trial, 0) is_prime_free_trial,
+    BINULL(is_prime, 0) is_prime,
+    BINULL(is_first_prime, 0) is_first_prime,
+    REVENUEMARGIN - IF(DATE(date_request) > c.prime_data_date, PRIMERECOGNIZEDSUBFEE,
+    PRIMESUBSCRIPTIONFEEALLOCATED) REVENUEMARGIN,
+    NETREVENUEMARGIN - IF(DATE(date_request) > c.prime_data_date, PRIMERECOGNIZEDSUBFEE,
+    PRIMESUBSCRIPTIONFEEALLOCATED) NETREVENUEMARGIN,
+    ADJUSTEDNETREVENUEMARGINRESTAT - IF(DATE(date_request) > c.prime_data_date, PRIMERECOGNIZEDSUBFEE,
+    PRIMESUBSCRIPTIONFEEALLOCATED) NETREVENUEMARGINADJUSTED,
+    MARGINALPROFIT - IF(DATE(date_request) > c.prime_data_date, PRIMERECOGNIZEDSUBFEE,
+    PRIMESUBSCRIPTIONFEEALLOCATED) MARGINALPROFIT,
+    CAST(bi.id_cp_order AS string) bookingid,
+    DATE(date_request) bookingdate,
+    bi.id_agg_market market,
+    bi.id_brand brand,
+    bi.id_website website,
+    CASE
+        WHEN bi.DESC_INTERFACE_AGG IN ( 'App', 'Mobile', 'Desktop' )
+    THEN
+    bi.DESC_INTERFACE_AGG
+        ELSE 'Desktop'
+    END interface,
+    CASE
+        WHEN bi.DESC_INTERFACE_AGG LIKE 'App'
+    THEN 'App'
+        WHEN bi.desc_mkt_channel LIKE 'SEO%'
+    THEN 'SEO'
+        WHEN bi.desc_mkt_channel IN UNNEST (c.channel) THEN bi.desc_mkt_channel
+        ELSE 'Others'
+    END channel,
+    CASE
+        WHEN bi.desc_interface_agg LIKE 'App'
+    THEN 'Cheap'
+        WHEN bi.desc_mkt_channel LIKE 'SEO%'
+    THEN 'Cheap'
+        WHEN bi.desc_mkt_channel IN UNNEST ( c.channel_cheap) THEN 'Cheap'
+        WHEN bi.desc_mkt_channel IN UNNEST ( c.channel_paid) THEN bi.desc_mkt_channel
+        ELSE 'Others'
+    END channel_group,
+    DATE_TRUNC(DATE(date_request), MONTH) MONTH,
+    u.email_sha1,
+FROM `bi-pro-225314.bi_ora_ext.v_r_trd_ud_order` bi,
+    constant c
+JOIN `datascience-210113.oracle_tables.ED_BOOKING_CUSTOMER` u
+    ON bi.id_cp_order = u.booking_id
+JOIN `datascience-210113.oracle_tables.ED_BOOKING` cp
+    ON bi.id_cp_order = cp.id
+WHERE bi.issued = 1
+    AND cp.status = 'CONTRACT'
+    AND bi.DESC_PRODUCT IN ( 'Flight', 'DP' )
+    AND DATE(bi.DATE_REQUEST) >= c.start_date
+    AND DATE(u.timestamp) >= c.start_date
+    AND DATE(cp.timestamp) >= c.start_date
+    AND email_buyer NOT IN (
+SELECT
+    email_buyer
+FROM blacklist
+    )
+    ),
+main AS (
+SELECT
+    bi.*,
+    IFNULL(new_user.new_user, 1.0) new_user,
+    IFNULL(new_user.num_bookings, 0) num_bookings,
+    row_number() OVER(partition BY bi.bookingid) row_number
+FROM bi
+LEFT JOIN new_user
+    ON bi.bookingid = new_user.bookingid
+    )
+SELECT
+    *
+    EXCEPT (
+    row_number)
+FROM main
+WHERE row_number = 1 
