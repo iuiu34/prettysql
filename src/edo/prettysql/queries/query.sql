@@ -1,86 +1,121 @@
 WITH vars AS (
 SELECT
+    DATE('{start_date}') AS start_date,
+    DATE('{end_date}') AS end_date,
+    26 AS month_in_x ),
+sessions AS (
 SELECT
-SELECT
-    DATE ( '{start_date}') AS start_date,
-SELECT
-    DATE ( '{end_date}') AS end_date),
-SELECT
-currency AS (
-SELECT
-SELECT
-SELECT
-    DISTINCT
-    MEMBERSHIP_ID MEMBER_ID,
-SELECT
-    currency subscr_fee_currency,
-SELECT
-    amount subscr_fee_amount,
-SELECT
--- count ( DISTINCT
-SELECT
-    membership_id) AS membership_ids SELECT
-FROM `datascience-210113.oracle_tables.GE_MEMBERSHIP_FEES` f LEFT SELECT
-JOIN `datascience-210113.oracle_tables.GE_MEMBERSHIP` m ON f.membership_id = m.id SELECT
-WHERE amount != 0 AND amount != -10 AND f.FEE_TYPE = 'MEMBERSHIP_RENEWAL'),
-SELECT
-FREE_TRIAL_USERS AS (
-SELECT
-SELECT
-SELECT
-    U.EMAIL_SHA1,
-SELECT
--- CONCAT ( TO_HEX ( U.EMAIL_SHA1 ) ,
-SELECT
-    '_',
-SELECT
-    U.website) AS EMAIL_WEBSITE,
-SELECT
-    U.website AS WEBSITE,
-SELECT
-    U.MEMBER_ACCOUNT_ID,
-SELECT
-    U.SUBSCR_DATE,
+    market,
+    website,
+    type,
+    fullVisitorId,
+    ga_visit_id,
+    session_id,
+    session_date,
+    eventLabel,
+    CASE
+        WHEN ( eventLabel LIKE ('%:log_%') OR eventLabel LIKE ('%:prime-log_%') OR eventLabel LIKE ('%:no-prime-log_&') OR eventLabel LIKE ('%:prime-std-log_%') ) THEN 1
+        ELSE 0
+    END AS is_logged,
+    CASE
+        WHEN ( eventLabel LIKE ('%prime_widget_sce:%') ) THEN 1
+        ELSE 0
+    END AS is_see_widget,
+    CASE
+        WHEN ( eventLabel LIKE ('%know_more_banner_sce:%') OR eventLabel LIKE ('%know_more_selection_sce:%') OR eventLabel LIKE ('%know_more_widget_sce:%') OR REGEXP_CONTAINS(eventLabel, r'^know_more_list_[[:alnum:]]_sce:') OR eventLabel LIKE ('%know_more_selection_sce:%') OR eventLabel LIKE ('%know_more_selection_continue%') ) THEN 1
+        ELSE 0
+    END AS is_know_more,
+    CASE
+        WHEN ( eventLabel LIKE ('%know_more_banner_close_sce:%') OR eventLabel LIKE ('%know_more_selection_close_sce:%') OR eventLabel LIKE ('%know_more_widget_close_sce:%') OR eventLabel LIKE ('%know_more_list_close_sce:%') OR eventLabel LIKE ('%know_more_selection_close%') ) THEN 1
+        ELSE 0
+    END AS is_know_more_close,
+    CASE
+        WHEN ( eventLabel LIKE ('%_benefit%') ) THEN 1
+        ELSE 0
+    END AS is_benefit,
+    CASE
+        WHEN ( eventLabel LIKE ('%prime_terms_conditions_sce:%') OR eventLabel LIKE ('%prime_terms_conditions_pag:%') OR eventLabel LIKE ('%prime_terms_sce:%') OR eventLabel LIKE ('%unlocked_terms_and_conditions_sce:%') ) THEN 1
+        ELSE 0
+    END AS is_tc,
+    CASE
+        WHEN ( eventLabel LIKE ('%prime_fare_click_sce:%') OR eventLabel LIKE ('%prime_click_sce:%') OR eventLabel LIKE ('%prime-log_click_sce:%') ) THEN 1
+        ELSE 0
+    END AS is_prime_fare,
+    CASE
+        WHEN ( eventLabel LIKE ('%standard_fare_click_sce:%') OR eventLabel LIKE ('%full_fare_click_sce:%') OR eventLabel LIKE ('%no-prime_click_sce:%') OR eventLabel LIKE ('%no-prime-log_click_sce:%') ) THEN 1
+        ELSE 0
+    END AS is_standard_fare,
+    CASE
+        WHEN ( eventLabel LIKE ('%existing_account_log_in_sce:prime%') ) THEN 1
+        ELSE 0
+    END AS is_account_login,
+    CASE
+        WHEN ( eventLabel LIKE ('%prime_go_login_sce:%')
+    OR eventLabel LIKE ('%prime_login_pag:%') ) THEN 1
+        ELSE 0
+    END AS is_prime_login,
+    CASE
+        WHEN ( eventLabel LIKE ('%prime_search_pag:%') ) THEN 1
+        ELSE 0
+    END AS is_prime_search,
+FROM `{project}.{dataset}.ftp_historical_sessions_ga_aux`
+WHERE eventLabel LIKE ('%prime_widget_sce:%')
+    OR eventLabel LIKE ('%_click_sce:%')
+    OR eventLabel LIKE ('%know_more_selection_sce:%')
+    OR REGEXP_CONTAINS(eventLabel, r'^know_more_list_[[:alnum:]]_sce:')
+    OR eventLabel LIKE ('%know_more_banner_sce:%')
+    OR eventLabel LIKE ('%know_more_widget_sce:%')
+    OR eventLabel LIKE ('%kknow_more_selection_continue%')
+    OR eventLabel LIKE ('%know_more_banner_close_sce:%')
+    OR eventLabel LIKE ('%know_more_list_close_sce:%')
+    OR eventLabel LIKE ('%know_more_selection_close_sce:%')
+    OR eventLabel LIKE ('%know_more_widget_close_sce:%')
+    OR eventLabel LIKE ('%know_more_selection_close%')
+    OR eventLabel LIKE ('%prime_terms_conditions_sce:%')
+    OR eventLabel LIKE ('%prime_terms_conditions_pag:%')
+    OR eventLabel LIKE ('%prime_terms_sce:%')
+    OR eventLabel LIKE ('%unlocked_terms_and_conditions_sce:%')
+    OR eventLabel LIKE ('%_benefit%')
+    OR eventLabel LIKE ('%prime_search_pag:%')
+    OR eventLabel LIKE ('%prime_login_pag:%')
+    OR eventLabel LIKE ('%prime_go_login_sce:%')
+    OR eventLabel LIKE ('%existing_account_log_in_sce:prime%') ),
+sessions_ftp AS (
 SELECT
     U.SUBSCR_BOOKING_ID,
+    U.SUBSCR_DATE,
+    GA.*
+FROM `{project}.{dataset}.ftp_users` U,
+    vars v
+LEFT JOIN `datascience-210113.ds_user_general.user_info` UI
+    USING
+    (email_sha1),
+    UNNEST( UI.OTHER_IDS.FULL_VISITOR_ID) fullVisitorId
+JOIN sessions GA
+    USING
+    (fullVisitorId)
+WHERE DATE(UI.PROCESSING_DATE) BETWEEN DATE_SUB(DATE(U.SUBSCR_DATE), INTERVAL v.month_in_x MONTH)
+    AND DATE(U.SUBSCR_DATE)
+    AND DATE(UI.PROCESSING_DATE) BETWEEN DATE_SUB(DATE(v.start_date), INTERVAL v.month_in_x MONTH)
+    AND v.end_date
+    AND DATE(GA.session_date) BETWEEN DATE_SUB(DATE(U.SUBSCR_DATE), INTERVAL v.month_in_x MONTH)
+    AND DATE(U.SUBSCR_DATE)
+    AND DATE(GA.session_date) BETWEEN DATE_SUB(v.start_date, INTERVAL v.month_in_x MONTH)
+    AND v.end_date
+    AND ARRAY_LENGTH(OTHER_IDS.FULL_VISITOR_ID) > 0 )
 SELECT
-    U.TYPE,
-SELECT
--- U.SUBSCR_SESSION_ID,
-SELECT
-    U.renewal_info_corrected AS RENEWAL_INFO,
-SELECT
-    CASE SELECT
-        WHEN U.renewal_info_corrected = 'Renewal' THEN 'RENEWED'
-        WHEN SELECT
-    U.renewal_info_corrected = 'online_renewal' THEN 'RENEWED'
-        WHEN SELECT
-    U.renewal_info_corrected = 'chargeback' THEN 'CHURN'
-        WHEN SELECT
-    U.renewal_info_corrected = 'refund' THEN 'CHURN'
-        WHEN SELECT
-    U.renewal_info_corrected = 'churn_online' THEN 'CHURN'
-        WHEN SELECT
-    U.renewal_info_corrected = 'churn_phone' THEN 'CHURN'
-        WHEN SELECT
-    U.renewal_info_corrected = 'failed' THEN 'FAILED'
-        ELSE 'None'
-    END SELECT
-    AS LABEL,
-SELECT
-    CAST ( U.renewal_info_corrected = 'Renewal' AS int64) ftp,
-SELECT
-    ROW_NUMBER () OVER ( PARTITION BY U.SUBSCR_BOOKING SELECT
-ORDER BY CAST ( renewal_info_corrected = 'Subscription' AS int64)) AS RANK,
-SELECT
-FROM `datascience-210113.ds_user_general.renewal_info_members_historical` U,
-SELECT
-    vars v LEFT SELECT
-JOIN currency c USING ( MEMBER_ID) SELECT
-WHERE U.Type = 'Free_trial_1M'
--- AND U.renewal_category = 'FTP1' AND DATE ( U.SUBSCR_DATE ) BETWEEN v.start_date AND v.end_date - 1 ) SELECT
-SELECT
-SELECT
-    * SELECT
-FROM FREE_TRIAL_USERS SELECT
-WHERE RANK = 1 
+    SUBSCR_BOOKING_ID,
+    SUBSCR_DATE,
+    SUM(is_logged) / COUNT(DISTINCT ga_visit_id) AS ratio_log,
+    SUM(is_see_widget) AS is_see_widget,
+    SUM(is_know_more) AS is_know_more,
+    SUM(is_benefit) AS is_benefit,
+    SUM(is_tc) AS is_tc,
+    SUM(is_prime_fare) AS is_prime_fare,
+    SUM(is_standard_fare) AS is_standard_fare,
+    SUM(is_account_login) AS is_account_login,
+    SUM(is_prime_login) AS is_prime_login,
+    SUM(is_prime_search) AS is_prime_search,
+FROM sessions_ftp
+GROUP BY
+    1, 2

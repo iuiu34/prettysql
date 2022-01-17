@@ -4,9 +4,7 @@
 [![Docs](https://img.shields.io/badge/docs-confluence-013A97)]()
 ![](https://img.shields.io/badge/dev-orange.svg)
 
-# pretty sql
-
-Format bq .sql files.
+Format big query `*.sql` files.
 
 For any question refer to 
 ds-mkt@edreamsodigeo.com.
