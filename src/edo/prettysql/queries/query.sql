@@ -123,6 +123,7 @@ JOIN `datascience-210113.oracle_tables.ED_BOOKING_CUSTOMER` u
 JOIN `datascience-210113.oracle_tables.ED_BOOKING` cp
     ON bi.id_cp_order = cp.id
 WHERE bi.issued = 1
+-- test
     AND cp.status = 'CONTRACT'
     AND bi.DESC_PRODUCT IN ( 'Flight', 'DP' )
     AND DATE(bi.DATE_REQUEST) >= c.start_date
