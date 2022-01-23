@@ -130,16 +130,14 @@ WHERE bi.issued = 1
     AND DATE(cp.timestamp) >= c.start_date
     AND email_buyer NOT IN (
 SELECT
-    email_buyer
-FROM blacklist
-    )
+    email_buyer FROM blacklist )
     ),
 main AS (
 SELECT
     bi.*,
     IFNULL(new_user.new_user, 1.0) new_user,
     IFNULL(new_user.num_bookings, 0) num_bookings,
-    row_number() OVER(partition BY bi.bookingid) row_number
+    row_number() OVER(PARTITION BY bi.bookingid) row_number
 FROM bi
 LEFT JOIN new_user
     ON bi.bookingid = new_user.bookingid

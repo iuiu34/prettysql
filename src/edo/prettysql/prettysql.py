@@ -7,7 +7,7 @@ import fire
 START_WORDS = ['select', 'from', 'join', 'left join', 'right join', 'group', 'with', 'where', 'order', 'having',
                'create', '--']
 SPECIAL_WORDS = ['select', 'from', 'group', 'with', 'as', 'on', 'where', 'and', 'between', 'having',
-                 'order', 'by', 'then', 'using', 'except', 'numeric']
+                 'order', 'by', 'then', 'using', 'except', 'numeric', 'partition','INTERVAL']
 
 NEWLINE_WORDS = ['select distinct', 'select']
 TWOTABS_WORDS = ['else', 'when', 'end']
