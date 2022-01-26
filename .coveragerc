@@ -1,6 +1,6 @@
 [run]
 branch = True
-omit = ds-sql-formatter/tests/*
+omit = prettysql/tests/*
 
 [report]
 fail_under=5
