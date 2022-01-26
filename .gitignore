@@ -1,0 +1,41 @@
+syntax: glob
+*.pyc
+*.pyo
+*.pyd
+.idea
+input
+tmp
+tox
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+.cache
+.eggs
+
+__pycache__
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+coverage.xml
+htmlcov
+flake-report/
+testreport.xml
+testreport.html
+.tox
+assets
+
